@@ -28,7 +28,7 @@ help:
 	@echo "  update-mo                 - regenerate mo files"
 	@echo "  all                       - all of the above"
 
-POTFILES = ../about.c ../driver-strings.txt ../file.c ../iface-mixer.c ../iface-no-mixer.c ../iface-none.c ../iface-unknown.c ../menu.c ../tooltips.c ../widget-combo.c ../window-hardware.c ../window-routing.c ../window-startup.c
+POTFILES = ../about.c ../driver-strings.txt ../file.c ../iface-mixer.c ../iface-no-mixer.c ../iface-none.c ../iface-unknown.c ../menu.c ../tooltips.c ../window-hardware.c ../window-routing.c ../window-startup.c
 
 pot: $(TD).pot 
 
