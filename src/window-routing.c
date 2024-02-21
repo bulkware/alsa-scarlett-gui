@@ -10,6 +10,9 @@
 #include "window-mixer.h"
 #include "window-routing.h"
 
+#include <libintl.h>
+#define _(String) gettext (String)
+
 static void get_routing_srcs(struct alsa_card *card) {
   struct alsa_elem *elem = card->sample_capture_elem;
 
@@ -224,15 +227,15 @@ static void routing_preset(
 static GtkWidget *make_preset_menu_button(struct alsa_card *card) {
   GMenu *menu = g_menu_new();
 
-  g_menu_append(menu, "Clear", "routing.preset('clear')");
-  g_menu_append(menu, "Direct", "routing.preset('direct')");
-  g_menu_append(menu, "Preamp", "routing.preset('preamp')");
-  g_menu_append(menu, "Stereo Out", "routing.preset('stereo_out')");
+  g_menu_append(menu, _("Clear"), "routing.preset('clear')");
+  g_menu_append(menu, _("Direct"), "routing.preset('direct')");
+  g_menu_append(menu, _("Preamp"), "routing.preset('preamp')");
+  g_menu_append(menu, _("Stereo Out"), "routing.preset('stereo_out')");
 
   GtkWidget *button = gtk_menu_button_new();
   gtk_widget_set_halign(button, GTK_ALIGN_CENTER);
   gtk_widget_set_valign(button, GTK_ALIGN_CENTER);
-  gtk_menu_button_set_label(GTK_MENU_BUTTON(button), "Presets");
+  gtk_menu_button_set_label(GTK_MENU_BUTTON(button), _("Presets"));
   gtk_menu_button_set_menu_model(
     GTK_MENU_BUTTON(button),
     G_MENU_MODEL(menu)
@@ -304,50 +307,50 @@ static void create_routing_grid(struct alsa_card *card) {
   );
 
   card->routing_hw_in_grid = create_routing_group_grid(
-    card, "routing_hw_in_grid", "Hardware Inputs",
-    "Hardware Inputs are the physical inputs on the interface",
+    card, "routing_hw_in_grid", _("Hardware Inputs"),
+    _("Hardware Inputs are the physical inputs on the interface"),
     GTK_ORIENTATION_VERTICAL, GTK_ALIGN_END
   );
   card->routing_pcm_in_grid = create_routing_group_grid(
-    card, "routing_pcm_in_grid", "PCM Outputs",
-    "PCM Outputs are the digital audio channels sent from the PC to "
-    "the interface over USB, used for audio playback",
+    card, "routing_pcm_in_grid", _("PCM Outputs"),
+    _("PCM Outputs are the digital audio channels sent from the PC to "
+      "the interface over USB, used for audio playback"),
     GTK_ORIENTATION_VERTICAL, GTK_ALIGN_END
   );
   card->routing_pcm_out_grid = create_routing_group_grid(
-    card, "routing_pcm_out_grid", "PCM Inputs",
-    "PCM Inputs are the digital audio channels sent from the interface "
-    "to the PC over USB, use for audio recording",
+    card, "routing_pcm_out_grid", _("PCM Inputs"),
+    _("PCM Inputs are the digital audio channels sent from the interface "
+    "to the PC over USB, use for audio recording"),
     GTK_ORIENTATION_VERTICAL, GTK_ALIGN_START
   );
   card->routing_hw_out_grid = create_routing_group_grid(
-    card, "routing_hw_out_grid", "Hardware Outputs",
-    "Hardware Outputs are the physical outputs on the interface",
+    card, "routing_hw_out_grid", _("Hardware Outputs"),
+    _("Hardware Outputs are the physical outputs on the interface"),
     GTK_ORIENTATION_VERTICAL, GTK_ALIGN_START
   );
   if (has_dsp) {
     card->routing_dsp_in_grid = create_routing_group_grid(
-      card, "routing_dsp_in_grid", "DSP\nInputs",
-      "DSP Inputs are used to send audio to the DSP, which is used for "
-      "features such as the input level meters, Air mode, and Autogain",
+      card, "routing_dsp_in_grid", _("DSP\nInputs"),
+      _("DSP Inputs are used to send audio to the DSP, which is used for "
+      "features such as the input level meters, Air mode, and Autogain"),
       GTK_ORIENTATION_HORIZONTAL, GTK_ALIGN_CENTER
     );
     card->routing_dsp_out_grid = create_routing_group_grid(
-      card, "routing_dsp_out_grid", "DSP\nOutputs",
-      "DSP Outputs are used to send audio from the DSP after it has "
-      "done its processing",
+      card, "routing_dsp_out_grid", _("DSP\nOutputs"),
+      _("DSP Outputs are used to send audio from the DSP after it has "
+      "done its processing"),
       GTK_ORIENTATION_HORIZONTAL, GTK_ALIGN_CENTER
     );
   }
   card->routing_mixer_in_grid = create_routing_group_grid(
-    card, "routing_mixer_in_grid", "Mixer\nInputs",
-    "Mixer Inputs are used to mix multiple audio channels together",
+    card, "routing_mixer_in_grid", _("Mixer\nInputs"),
+    _("Mixer Inputs are used to mix multiple audio channels together"),
     GTK_ORIENTATION_HORIZONTAL, GTK_ALIGN_CENTER
   );
   card->routing_mixer_out_grid = create_routing_group_grid(
     card, "routing_mixer_out_grid",
-    card->has_talkback ? "Mixer Outputs" : "Mixer\nOutputs",
-    "Mixer Outputs are used to send audio from the mixer",
+    card->has_talkback ? _("Mixer Outputs") : _("Mixer\nOutputs"),
+    _("Mixer Outputs are used to send audio from the mixer"),
     GTK_ORIENTATION_HORIZONTAL, GTK_ALIGN_CENTER
   );
 
@@ -388,7 +391,7 @@ static void create_routing_grid(struct alsa_card *card) {
   gtk_label_set_justify(GTK_LABEL(src_label), GTK_JUSTIFY_CENTER);
   gtk_grid_attach(routing_grid, src_label, left_col_num, 3, 1, 1);
 
-  GtkWidget *snk_label = gtk_label_new("← Sinks\n↓");
+  GtkWidget *snk_label = gtk_label_new(g_strdup_printf("← %s\n↓",_("Sinks")));
   gtk_label_set_justify(GTK_LABEL(snk_label), GTK_JUSTIFY_CENTER);
   gtk_grid_attach(routing_grid, snk_label, right_col_num, 0, 1, 1);
 }
@@ -946,12 +949,12 @@ static void add_routing_widgets(
   }
 
   if (card->has_talkback) {
-    GtkWidget *l_talkback = gtk_label_new("Talkback");
+    GtkWidget *l_talkback = gtk_label_new(_("Talkback"));
     gtk_widget_set_tooltip_text(
       l_talkback,
-      "Mixer Outputs with Talkback enabled will have the level of "
+      _("Mixer Outputs with Talkback enabled will have the level of "
       "Mixer Input 25 internally raised and lowered when the "
-      "Talkback control is turned On and Off."
+      "Talkback control is turned On and Off.")
     );
     gtk_grid_attach(
       GTK_GRID(card->routing_mixer_out_grid), l_talkback,

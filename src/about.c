@@ -3,6 +3,9 @@
 
 #include "about.h"
 
+#include <libintl.h>
+#define _(String) gettext (String)
+
 void activate_about(
   GSimpleAction *action,
   GVariant      *parameter,
@@ -11,20 +14,20 @@ void activate_about(
   GtkWindow *w = GTK_WINDOW(data);
 
   const char *authors[] = {
-    "Geoffrey D. Bennett",
+    _("Geoffrey D. Bennett"),
     NULL
   };
 
   gtk_show_about_dialog(
     w,
-    "program-name", "ALSA Scarlett2 Control Panel",
+    "program-name", _("ALSA Scarlett2 Control Panel"),
     "version", "Version " VERSION,
-    "comments", "GTK4 interface to the ALSA Scarlett and Clarett Mixer controls",
+    "comments", _("GTK4 interface to the ALSA Scarlett and Clarett Mixer controls"),
     "website", "https://github.com/geoffreybennett/alsa-scarlett-gui",
-    "copyright", "Copyright 2022-2024 Geoffrey D. Bennett",
+    "copyright", _("Copyright 2022-2024 Geoffrey D. Bennett"),
     "license-type", GTK_LICENSE_GPL_3_0,
     "logo-icon-name", "alsa-scarlett-gui-logo",
-    "title", "About ALSA Scarlett2 Mixer Interface",
+    "title", _("About ALSA Scarlett2 Mixer Interface"),
     "authors", authors,
     NULL
   );

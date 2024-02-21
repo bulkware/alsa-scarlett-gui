@@ -5,6 +5,8 @@
 #include "file.h"
 #include "menu.h"
 #include "window-hardware.h"
+#include <libintl.h>
+#define _(String) gettext (String)
 
 // helper for common code of activate_*() functions
 static void update_visibility(
