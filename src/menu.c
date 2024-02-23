@@ -131,7 +131,7 @@ void populate_submenu(
   const struct menu_data *data
 ) {
   GMenu *submenu = g_menu_new();
-  g_menu_append_submenu(menu, data->label, G_MENU_MODEL(submenu));
+  g_menu_append_submenu(menu, _(data->label), G_MENU_MODEL(submenu));
 
   // An empty-initialised menu_item marks the end
   for (struct menu_item *item = data->items; item->label; item++) {
