@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-23 14:19+0200\n"
+"POT-Creation-Date: 2024-02-26 14:59+0200\n"
 "PO-Revision-Date: 2024-02-23 14:19+0200\n"
 "Last-Translator:  <anttipekkameronen@gmail.com>\n"
 "Language-Team: Finnish\n"
@@ -62,8 +62,40 @@ msgstr ""
 msgid "Check dmesg output for \"%s\""
 msgstr ""
 
+#: ../window-hardware.c:43
+msgid "Clarett 2Pre USB"
+msgstr ""
+
+#: ../window-hardware.c:44
+msgid "Clarett 4Pre USB"
+msgstr ""
+
+#: ../window-hardware.c:45
+msgid "Clarett 8Pre USB"
+msgstr ""
+
+#: ../window-hardware.c:66
+msgid "Clarett USB"
+msgstr ""
+
 #: ../iface-unknown.c:29
 msgid "Clarett USB and Clarett+ 2Pre/4Pre/8Pre"
+msgstr ""
+
+#: ../window-hardware.c:69
+msgid "Clarett+"
+msgstr ""
+
+#: ../window-hardware.c:50
+msgid "Clarett+ 2Pre"
+msgstr ""
+
+#: ../window-hardware.c:51
+msgid "Clarett+ 4Pre"
+msgstr ""
+
+#: ../window-hardware.c:52
+msgid "Clarett+ 8Pre"
 msgstr ""
 
 #: ../window-routing.c:230
@@ -130,6 +162,10 @@ msgstr ""
 #: ../window-startup.c:142
 msgid "Disabled"
 msgstr "Pois käytöstä"
+
+#: ../menu.c:104
+msgid "E_xit"
+msgstr ""
 
 #: ../iface-mixer.c:164 ../window-startup.c:71 ../window-startup.c:107
 #: ../window-startup.c:142
@@ -532,17 +568,67 @@ msgid ""
 "as a standalone preamp or mixer."
 msgstr ""
 
+#: ../menu.c:122
+msgid "_About"
+msgstr ""
+
 #: ../file.c:105 ../file.c:156 ../file.c:199
 msgid "_Cancel"
+msgstr ""
+
+#: ../menu.c:99
+msgid "_File"
+msgstr ""
+
+#: ../menu.c:119
+msgid "_Help"
+msgstr ""
+
+#: ../menu.c:103
+msgid "_Interface Simulation"
+msgstr ""
+
+#: ../menu.c:113
+msgid "_Levels"
 msgstr ""
 
 #: ../file.c:104 ../file.c:198
 msgid "_Load"
 msgstr "_Lataa"
 
+#: ../menu.c:101
+#, fuzzy
+msgid "_Load Configuration"
+msgstr "Lataa konfiguraatio"
+
+#: ../menu.c:112
+msgid "_Mixer"
+msgstr ""
+
+#: ../menu.c:111
+msgid "_Routing"
+msgstr ""
+
 #: ../file.c:155
 msgid "_Save"
 msgstr "_Tallenna"
+
+#: ../menu.c:102
+#, fuzzy
+msgid "_Save Configuration"
+msgstr "Lataa konfiguraatio"
+
+#: ../menu.c:114
+msgid "_Startup"
+msgstr ""
+
+#: ../menu.c:121
+msgid "_Supported Hardware"
+msgstr ""
+
+#: ../menu.c:109
+msgid "_View"
+msgstr ""
 
 #: ../file.c:66
 msgid "alsactl state file (.state)"

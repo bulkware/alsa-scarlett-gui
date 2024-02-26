@@ -7,6 +7,7 @@
 #include "window-hardware.h"
 #include <libintl.h>
 #define _(String) gettext (String)
+#define N_(String) String
 
 // helper for common code of activate_*() functions
 static void update_visibility(
@@ -95,30 +96,30 @@ struct menu_data {
 
 static const struct menu_data menus[] = {
   {
-    "_File",
+    N_("_File"),
     (struct menu_item[]){
-      { "_Load Configuration",   "win.load", { "<Control>O", NULL } },
-      { "_Save Configuration",   "win.save", { "<Control>S", NULL } },
-      { "_Interface Simulation", "win.sim",  { "<Control>I", NULL } },
-      { "E_xit",                 "app.quit", { "<Control>Q", NULL } },
+      { N_("_Load Configuration"),   "win.load", { "<Control>O", NULL } },
+      { N_("_Save Configuration"),   "win.save", { "<Control>S", NULL } },
+      { N_("_Interface Simulation"), "win.sim",  { "<Control>I", NULL } },
+      { N_("E_xit"),                 "app.quit", { "<Control>Q", NULL } },
       {}
     }
   },
   {
-    "_View",
+    N_("_View"),
     (struct menu_item[]){
-      { "_Routing", "win.routing", { "<Control>R", NULL } },
-      { "_Mixer",   "win.mixer",   { "<Control>M", NULL } },
-      { "_Levels",  "win.levels",  { "<Control>L", NULL } },
-      { "_Startup", "win.startup", { "<Control>T", NULL } },
+      { N_("_Routing"), "win.routing", { "<Control>R", NULL } },
+      { N_("_Mixer"),   "win.mixer",   { "<Control>M", NULL } },
+      { N_("_Levels"),  "win.levels",  { "<Control>L", NULL } },
+      { N_("_Startup"), "win.startup", { "<Control>T", NULL } },
       {}
     }
   },
   {
-    "_Help",
+    N_("_Help"),
     (struct menu_item[]){
-      { "_Supported Hardware", "app.hardware", { "<Control>H",     NULL } },
-      { "_About",              "win.about",    { "<Control>slash", NULL } },
+      { N_("_Supported Hardware"), "app.hardware", { "<Control>H",     NULL } },
+      { N_("_About"),              "win.about",    { "<Control>slash", NULL } },
       {}
     }
   },
