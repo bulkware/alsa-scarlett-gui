@@ -40,16 +40,16 @@ struct hw_info gen_3_big_info[] = {
 };
 
 struct hw_info clarett_usb_info[] = {
-  { "Clarett 2Pre USB" },
-  { "Clarett 4Pre USB" },
-  { "Clarett 8Pre USB" },
+  { N_("Clarett 2Pre USB") },
+  { N_("Clarett 4Pre USB") },
+  { N_("Clarett 8Pre USB") },
   { }
 };
 
 struct hw_info clarett_plus_info[] = {
-  { "Clarett+ 2Pre" },
-  { "Clarett+ 4Pre" },
-  { "Clarett+ 8Pre" },
+  { N_("Clarett+ 2Pre") },
+  { N_("Clarett+ 4Pre") },
+  { N_("Clarett+ 8Pre") },
   { }
 };
 
@@ -63,10 +63,10 @@ struct hw_cat hw_cat[] = {
   { N_("Big 3rd Gen"),
     gen_3_big_info
   },
-  { "Clarett USB",
+  { N_("Clarett USB"),
     clarett_usb_info
   },
-  { "Clarett+",
+  { N_("Clarett+"),
     clarett_plus_info
   },
   { }
