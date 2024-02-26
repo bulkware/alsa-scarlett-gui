@@ -19,23 +19,23 @@ msgstr ""
 
 #: ../window-hardware.c:57
 msgid "2nd Gen"
-msgstr ""
+msgstr "2 Gen"
 
 #: ../driver-strings.txt:9
 msgid "ADAT"
-msgstr ""
+msgstr "ADAT"
 
 #: ../window-hardware.c:115
 msgid "ALSA Scarlett Supported Hardware"
-msgstr ""
+msgstr "ALSA Scartlett Tuetut Laitteet"
 
 #: ../about.c:23 ../iface-none.c:25
 msgid "ALSA Scarlett2 Control Panel"
-msgstr "ALSA Scarlett2 ohjauspaneeli"
+msgstr "ALSA Scarlett2 Ohjauspaneeli"
 
 #: ../about.c:30
 msgid "About ALSA Scarlett2 Mixer Interface"
-msgstr ""
+msgstr "Tietoja ALSA Scarlett2 Mikserin Käyttöliittymästä"
 
 #: ../iface-mixer.c:136
 msgid "Alt"
@@ -43,11 +43,11 @@ msgstr ""
 
 #: ../iface-mixer.c:431
 msgid "Analogue Inputs"
-msgstr ""
+msgstr "Analogiset Sisääntulot"
 
 #: ../iface-mixer.c:518
 msgid "Analogue Outputs"
-msgstr ""
+msgstr "Analogiset Ulostulot"
 
 #: ../iface-unknown.c:30
 msgid "Are you running a recent kernel with Scarlett2 support enabled?"
@@ -114,19 +114,23 @@ msgstr ""
 
 #: ../about.c:27
 msgid "Copyright 2022-2024 Geoffrey D. Bennett"
-msgstr ""
+msgstr "Tekijänoikeus 2022-2024 Geoffrey D. Bennett"
 
 #: ../window-routing.c:333
 msgid ""
 "DSP\n"
 "Inputs"
 msgstr ""
+"DSP\n"
+"Sisääntulot"
 
 #: ../window-routing.c:339
 msgid ""
 "DSP\n"
 "Outputs"
 msgstr ""
+"DSP\n"
+"Ulostulot"
 
 #: ../window-routing.c:334
 msgid ""
@@ -165,7 +169,7 @@ msgstr "Pois käytöstä"
 
 #: ../menu.c:104
 msgid "E_xit"
-msgstr ""
+msgstr "Lopeta"
 
 #: ../iface-mixer.c:164 ../window-startup.c:71 ../window-startup.c:107
 #: ../window-startup.c:142
@@ -230,7 +234,7 @@ msgstr ""
 
 #: ../window-routing.c:310
 msgid "Hardware Inputs"
-msgstr ""
+msgstr "Laitteen Sisääntulot"
 
 #: ../window-routing.c:311
 msgid "Hardware Inputs are the physical inputs on the interface"
@@ -238,7 +242,7 @@ msgstr ""
 
 #: ../window-routing.c:327
 msgid "Hardware Outputs"
-msgstr ""
+msgstr "Laitteen Ulostulot"
 
 #: ../window-routing.c:328
 msgid "Hardware Outputs are the physical outputs on the interface"
@@ -246,25 +250,27 @@ msgstr ""
 
 #: ../iface-no-mixer.c:32
 msgid "Input Controls"
-msgstr ""
+msgstr "Sisääntulon Kontrollit"
 
 #: ../iface-no-mixer.c:84
 msgid "Inst"
-msgstr ""
+msgstr "Inst"
 
 #: ../driver-strings.txt:7
 msgid "Internal"
-msgstr ""
+msgstr "Sisäinen"
 
 #: ../window-startup.c:306
 msgid ""
 "It appears that there are no startup controls. You probably need to upgrade "
 "your kernel to see something here."
 msgstr ""
+"Näyttää siltä että ei ole kontrolleja täällä. Sattaa olla että sinun"
+"tulee päivittää kernelin versio jotta tänne tulee jotakin näkyviin."
 
 #: ../iface-mixer.c:832
 msgid "Levels"
-msgstr ""
+msgstr "Voimakkuudet"
 
 #: ../iface-mixer.c:638
 msgid "Line 1–2"
@@ -296,7 +302,7 @@ msgstr ""
 
 #: ../iface-mixer.c:824
 msgid "Mixer"
-msgstr ""
+msgstr "Mikseri"
 
 #: ../window-routing.c:346
 msgid ""
@@ -464,29 +470,31 @@ msgstr ""
 
 #: ../iface-unknown.c:24
 msgid "Sorry, I don’t recognise the controls on this card."
-msgstr ""
+msgstr "Pahoittelut, en tunnista tämän äänikortin kontrolleja."
 
 #: ../iface-mixer.c:135
 msgid "Speaker Switching"
-msgstr ""
+msgstr "Kaijuttimien Vaihtaminen"
 
 #: ../iface-mixer.c:141
 msgid ""
 "Speaker Switching lets you swap between two pairs of monitoring speakers "
 "very easily."
 msgstr ""
+"Kaijuttimien Vaihtaminen antaa sinun vaihtaa kahden kaijuttimesi"
+"välillä erittäin helposti."
 
 #: ../window-startup.c:68
 msgid "Standalone"
-msgstr ""
+msgstr "Itsenäinen"
 
 #: ../iface-mixer.c:838 ../iface-no-mixer.c:125
 msgid "Startup Configuration"
-msgstr ""
+msgstr "Käynnistys Konfiguraatio"
 
 #: ../window-routing.c:233
 msgid "Stereo Out"
-msgstr ""
+msgstr "Stereo Ulostulo"
 
 #: ../iface-no-mixer.c:118
 msgid "Stereo sends input 1 to the left, and input 2 to the right output."
@@ -494,7 +502,7 @@ msgstr ""
 
 #: ../iface-mixer.c:82
 msgid "Sync Status"
-msgstr ""
+msgstr "Synkronisoinnin Status"
 
 #: ../iface-mixer.c:67
 msgid ""
@@ -570,27 +578,27 @@ msgstr ""
 
 #: ../menu.c:122
 msgid "_About"
-msgstr ""
+msgstr "_Tietoja"
 
 #: ../file.c:105 ../file.c:156 ../file.c:199
 msgid "_Cancel"
-msgstr ""
+msgstr "_Peruuta"
 
 #: ../menu.c:99
 msgid "_File"
-msgstr ""
+msgstr "_Tiedosto"
 
 #: ../menu.c:119
 msgid "_Help"
-msgstr ""
+msgstr "_Ohje"
 
 #: ../menu.c:103
 msgid "_Interface Simulation"
-msgstr ""
+msgstr "_Käyttöliittymän Simulaatio"
 
 #: ../menu.c:113
 msgid "_Levels"
-msgstr ""
+msgstr "_Voimakkuudet"
 
 #: ../file.c:104 ../file.c:198
 msgid "_Load"
@@ -599,11 +607,11 @@ msgstr "_Lataa"
 #: ../menu.c:101
 #, fuzzy
 msgid "_Load Configuration"
-msgstr "Lataa konfiguraatio"
+msgstr "_Lataa konfiguraatio"
 
 #: ../menu.c:112
 msgid "_Mixer"
-msgstr ""
+msgstr "_Mikseri"
 
 #: ../menu.c:111
 msgid "_Routing"
@@ -616,19 +624,19 @@ msgstr "_Tallenna"
 #: ../menu.c:102
 #, fuzzy
 msgid "_Save Configuration"
-msgstr "Lataa konfiguraatio"
+msgstr "_Tallenna konfiguraatio"
 
 #: ../menu.c:114
 msgid "_Startup"
-msgstr ""
+msgstr "_Käynnistys"
 
 #: ../menu.c:121
 msgid "_Supported Hardware"
-msgstr ""
+msgstr "_Tuetut Laitteet"
 
 #: ../menu.c:109
 msgid "_View"
-msgstr ""
+msgstr "_Näkymä"
 
 #: ../file.c:66
 msgid "alsactl state file (.state)"
