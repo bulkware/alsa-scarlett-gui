@@ -21,6 +21,8 @@
 #define DIAL_MIN_WIDTH 50
 #define DIAL_MAX_WIDTH 70
 
+#define HISTORY_COUNT 50
+
 static int set_value(GtkDial *dial, double newval);
 
 static void gtk_dial_set_property(
@@ -90,6 +92,7 @@ enum {
   PROP_OFF_DB,
   PROP_TAPER,
   PROP_CAN_CONTROL,
+  PROP_PEAK_HOLD,
   LAST_PROP
 };
 
@@ -117,6 +120,7 @@ struct _GtkDial {
   double off_db;
   int taper;
   gboolean can_control;
+  int peak_hold;
 
   int properties_updated;
 
@@ -150,11 +154,24 @@ struct _GtkDial {
   cairo_pattern_t *fill_pattern[2][2];
   cairo_pattern_t *outline_pattern[2];
 
+  // pango resources for displaying the peak value
+  PangoLayout *peak_layout;
+  PangoFontDescription *peak_font_desc;
+
   // variables derived from the dial value
   double valp;
   double angle;
   double slider_cx;
   double slider_cy;
+
+  // same for the peak angle
+  double peak_angle;
+
+  // value history for displaying peak
+  double hist_values[HISTORY_COUNT];
+  long long hist_time[HISTORY_COUNT];
+  double current_peak;
+  int hist_head, hist_tail, hist_count;
 };
 
 G_DEFINE_TYPE(GtkDial, gtk_dial, GTK_TYPE_WIDGET)
@@ -175,6 +192,17 @@ static void dial_measure(
                                       keyval, mask,  \
                                       "move-slider", \
                                       "(i)", scroll)
+
+long long current_time = 0;
+
+void gtk_dial_peak_tick(void) {
+  struct timespec ts;
+
+  if (clock_gettime(CLOCK_BOOTTIME, &ts) < 0)
+    return;
+
+  current_time = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+}
 
 // BEGIN SECTION HELPERS
 
@@ -381,6 +409,21 @@ static int update_dial_properties(GtkDial *dial) {
     dial->outline_pattern[dim] = pat;
   }
 
+  // init pango layout for peak value
+  if (dial->peak_layout)
+    g_object_unref(dial->peak_layout);
+  if (dial->peak_font_desc)
+    pango_font_description_free(dial->peak_font_desc);
+
+  PangoContext *context = gtk_widget_create_pango_context(GTK_WIDGET(dial));
+  dial->peak_layout = pango_layout_new(context);
+  dial->peak_font_desc = pango_context_get_font_description(context);
+  int size = pango_font_description_get_size(dial->peak_font_desc) * 0.6;
+  dial->peak_font_desc = pango_font_description_copy(dial->peak_font_desc);
+  pango_font_description_set_size(dial->peak_font_desc, size);
+  pango_layout_set_font_description(dial->peak_layout, dial->peak_font_desc);
+  g_object_unref(context);
+
   // calculate level meter breakpoint angles
   if (dial->level_breakpoint_angles)
     free(dial->level_breakpoint_angles);
@@ -404,6 +447,12 @@ static void update_dial_values(GtkDial *dial) {
   dial->angle = calc_val(dial->valp, ANGLE_START, ANGLE_END);
   dial->slider_cx = cos(dial->angle) * dial->slider_radius + dial->cx;
   dial->slider_cy = sin(dial->angle) * dial->slider_radius + dial->cy;
+
+  if (!dial->peak_hold)
+    return;
+
+  double peak_valp = calc_taper(dial, dial->current_peak);
+  dial->peak_angle = calc_val(peak_valp, ANGLE_START, ANGLE_END);
 }
 
 static double pdist2(double x1, double y1, double x2, double y2) {
@@ -530,6 +579,20 @@ static void gtk_dial_class_init(GtkDialClass *klass) {
     G_PARAM_READWRITE | G_PARAM_CONSTRUCT
   );
 
+  /**
+   * GtkDial:peak-hold: (attributes org.gtk.Method.get=gtk_dial_get_peak_hold org.gtk.Method.set=gtk_dial_set_peak_hold)
+   *
+   * The number of milliseconds to hold the peak value.
+   */
+  properties[PROP_PEAK_HOLD] = g_param_spec_int(
+    "peak-hold",
+    "PeakHold",
+    "The number of milliseconds to hold the peak value",
+    0, 1000,
+    0,
+    G_PARAM_READWRITE | G_PARAM_CONSTRUCT
+  );
+
   g_object_class_install_properties(g_class, LAST_PROP, properties);
 
   /**
@@ -648,6 +711,11 @@ static void gtk_dial_init(GtkDial *dial) {
   g_signal_connect(
     dial, "notify::sensitive", G_CALLBACK(gtk_dial_notify_sensitive_cb), dial
   );
+
+  dial->current_peak = -INFINITY;
+  dial->hist_head = 0;
+  dial->hist_tail = 0;
+  dial->hist_count = 0;
 }
 
 static void dial_measure(
@@ -684,6 +752,70 @@ static void cairo_set_source_rgba_dim(
     cairo_set_source_rgba(cr, r * 0.5, g * 0.5, b * 0.5, a);
   else
     cairo_set_source_rgba(cr, r, g, b, a);
+}
+
+static void draw_peak(GtkDial *dial, cairo_t *cr, double radius) {
+
+  double angle_start = dial->peak_angle - M_PI / 180;
+  if (angle_start < ANGLE_START)
+    return;
+
+  // determine the colour of the peak
+  int count = dial->level_breakpoints_count;
+
+  // if there are no colours, don't draw the peak
+  if (!count)
+    return;
+
+  int i;
+
+  for (i = 0; i < count - 1; i++)
+    if (dial->current_peak < dial->level_breakpoints[i + 1])
+      break;
+
+  const double *colours = &dial->level_colours[i * 3];
+
+  cairo_set_source_rgba_dim(
+    cr, colours[0], colours[1], colours[2], 0.5, dial->dim
+  );
+  cairo_set_line_width(cr, 2);
+  cairo_arc(cr, dial->cx, dial->cy, radius, ANGLE_START, dial->peak_angle);
+  cairo_stroke(cr);
+
+  cairo_set_source_rgba_dim(
+    cr, colours[0], colours[1], colours[2], 1, dial->dim
+  );
+  cairo_set_line_width(cr, 4);
+  cairo_arc(cr, dial->cx, dial->cy, radius, angle_start, dial->peak_angle);
+  cairo_stroke(cr);
+}
+
+static void show_peak_value(GtkDial *dial, cairo_t *cr) {
+  double value = round(dial->current_peak);
+
+  if (value <= gtk_adjustment_get_lower(dial->adj))
+    return;
+
+  char s[20];
+  char *p = s;
+  if (value < 0)
+    p += sprintf(p, "−");
+  snprintf(p, 10, "%.0f", fabs(value));
+
+  pango_layout_set_text(dial->peak_layout, s, -1);
+
+  int width, height;
+  pango_layout_get_pixel_size(dial->peak_layout, &width, &height);
+
+  cairo_set_source_rgba_dim(cr, 1, 1, 1, 0.5, dial->dim);
+
+  cairo_move_to(
+    cr,
+    dial->cx - width / 2 - 1,
+    dial->cy - height / 2
+  );
+
+  pango_cairo_show_layout(cr, dial->peak_layout);
 }
 
 static void draw_slider(
@@ -781,6 +913,10 @@ static void dial_snapshot(GtkWidget *widget, GtkSnapshot *snapshot) {
     draw_slider(dial, cr, dial->slider_radius, 6, 0.3);
   }
 
+  // peak hold
+  if (dial->peak_hold)
+    draw_peak(dial, cr, dial->slider_radius);
+
   // draw line to zero db
   double zero_db = gtk_dial_get_zero_db(dial);
   if (zero_db != -G_MAXDOUBLE) {
@@ -820,6 +956,10 @@ static void dial_snapshot(GtkWidget *widget, GtkSnapshot *snapshot) {
   cairo_arc(cr, dial->cx, dial->cy, dial->knob_radius, 0, 2 * M_PI);
   cairo_set_line_width(cr, 2);
   cairo_stroke(cr);
+
+  // show the peak value
+  if (dial->peak_hold)
+    show_peak_value(dial, cr);
 
   // if focussed
   if (has_focus) {
@@ -903,6 +1043,9 @@ static void gtk_dial_set_property(
     case PROP_CAN_CONTROL:
       gtk_dial_set_can_control(dial, g_value_get_boolean(value));
       break;
+    case PROP_PEAK_HOLD:
+      gtk_dial_set_peak_hold(dial, g_value_get_int(value));
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
       break;
@@ -935,6 +1078,9 @@ static void gtk_dial_get_property(
       break;
     case PROP_CAN_CONTROL:
       g_value_set_boolean(value, dial->can_control);
+      break;
+    case PROP_PEAK_HOLD:
+      g_value_set_int(value, dial->peak_hold);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -1044,6 +1190,14 @@ void gtk_dial_set_level_meter_colours(
   dial->properties_updated = 1;
 }
 
+void gtk_dial_set_peak_hold(GtkDial *dial, int peak_hold) {
+  dial->peak_hold = peak_hold;
+}
+
+int gtk_dial_get_peak_hold(GtkDial *dial) {
+  return dial->peak_hold;
+}
+
 void gtk_dial_set_adjustment(GtkDial *dial, GtkAdjustment *adj) {
   if (!(adj == NULL || GTK_IS_ADJUSTMENT(adj)))
     return;
@@ -1057,6 +1211,46 @@ void gtk_dial_set_adjustment(GtkDial *dial, GtkAdjustment *adj) {
 
 GtkAdjustment *gtk_dial_get_adjustment(GtkDial *dial) {
   return dial->adj;
+}
+
+static void gtk_dial_add_hist_value(GtkDial *dial, double value) {
+
+  int need_peak_update = 0;
+
+  // remove the oldest value(s) if they are too old or if the history
+  // is full
+  while (dial->hist_count > 0 &&
+         (dial->hist_time[dial->hist_head] < current_time - dial->peak_hold ||
+          dial->hist_count == HISTORY_COUNT)) {
+
+    // check if the value removed is the current peak
+    if (dial->hist_values[dial->hist_head] >= dial->current_peak)
+      need_peak_update = 1;
+
+    // move the head forward
+    dial->hist_head = (dial->hist_head + 1) % HISTORY_COUNT;
+    dial->hist_count--;
+  }
+
+  // recalculate the peak if needed
+  if (need_peak_update) {
+    dial->current_peak = -INFINITY;
+    for (int i = dial->hist_head;
+         i != dial->hist_tail;
+         i = (i + 1) % HISTORY_COUNT)
+      if (dial->hist_values[i] > dial->current_peak)
+        dial->current_peak = dial->hist_values[i];
+  }
+
+  // add the new value
+  dial->hist_values[dial->hist_tail] = value;
+  dial->hist_time[dial->hist_tail] = current_time;
+  dial->hist_tail = (dial->hist_tail + 1) % HISTORY_COUNT;
+  dial->hist_count++;
+
+  // update the peak if needed
+  if (value > dial->current_peak)
+    dial->current_peak = value;
 }
 
 static int set_value(GtkDial *dial, double newval) {
@@ -1079,7 +1273,10 @@ static int set_value(GtkDial *dial, double newval) {
 
   double oldval = gtk_adjustment_get_value(dial->adj);
 
-  if (oldval == newval)
+  double old_peak = dial->current_peak;
+  gtk_dial_add_hist_value(dial, newval);
+
+  if (oldval == newval && old_peak == dial->current_peak)
     return 0;
 
   gtk_adjustment_set_value(dial->adj, newval);
@@ -1088,7 +1285,7 @@ static int set_value(GtkDial *dial, double newval) {
   double old_valp = dial->valp;
   update_dial_values(dial);
 
-  return old_valp != dial->valp;
+  return old_valp != dial->valp || old_peak != dial->current_peak;
 }
 
 static void step_back(GtkDial *dial) {
@@ -1347,6 +1544,11 @@ void gtk_dial_dispose(GObject *o) {
   for (int dim = 0; dim <= 1; dim++)
     if (dial->outline_pattern[dim])
       cairo_pattern_destroy(dial->outline_pattern[dim]);
+
+  if (dial->peak_layout)
+    g_object_unref(dial->peak_layout);
+  if (dial->peak_font_desc)
+    pango_font_description_free(dial->peak_font_desc);
 
   g_object_unref(dial->adj);
   dial->adj = NULL;

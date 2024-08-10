@@ -16,7 +16,7 @@ static struct routing_snk *get_mixer_r_snk(
     struct routing_snk *r_snk = &g_array_index(
       card->routing_snks, struct routing_snk, i
     );
-    if (r_snk->port_category != PC_MIX)
+    if (r_snk->elem->port_category != PC_MIX)
       continue;
     if (r_snk->elem->lr_num == input_num)
       return r_snk;
@@ -66,14 +66,20 @@ GtkWidget *create_mixer_controls(struct alsa_card *card) {
     if (!elem->card)
       continue;
 
-    // looking for "Mix X Input Y Playback Volume" elements
-    if (strncmp(elem->name, "Mix ", 4) != 0)
-      continue;
+    // looking for "Mix X Input Y Playback Volume"
+    // or "Matrix Y Mix X Playback Volume" elements (Gen 1)
     if (!strstr(elem->name, "Playback Volume"))
+      continue;
+    if (strncmp(elem->name, "Mix ", 4) &&
+        strncmp(elem->name, "Matrix ", 7))
+      continue;
+
+    char *mix_str = strstr(elem->name, "Mix ");
+    if (!mix_str)
       continue;
 
     // extract the mix number and input number from the element name
-    int mix_num = elem->name[4] - 'A';
+    int mix_num = mix_str[4] - 'A';
     int input_num = get_num_from_string(elem->name) - 1;
 
     if (mix_num >= MAX_MIX_OUT) {
@@ -123,7 +129,7 @@ void update_mixer_labels(struct alsa_card *card) {
       card->routing_snks, struct routing_snk, i
     );
 
-    if (r_snk->port_category != PC_MIX)
+    if (r_snk->elem->port_category != PC_MIX)
       continue;
 
     struct alsa_elem *elem = r_snk->elem;

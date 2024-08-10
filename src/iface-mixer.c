@@ -11,6 +11,7 @@
 #include "widget-gain.h"
 #include "widget-input-select.h"
 #include "widget-label.h"
+#include "widget-sample-rate.h"
 #include "window-helper.h"
 #include "window-levels.h"
 #include "window-mixer.h"
@@ -28,8 +29,12 @@ static void add_clock_source_control(
 
   struct alsa_elem *clock_source = get_elem_by_prefix(elems, "Clock Source");
 
-  if (!clock_source)
-    return;
+  if (!clock_source) {
+    clock_source = get_elem_by_substr(elems, "Sync Clock Source");
+
+    if (!clock_source)
+      return;
+  }
 
   GtkWidget *b = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
   gtk_widget_set_tooltip_text(
@@ -57,8 +62,11 @@ static void add_sync_status_control(
 
   struct alsa_elem *sync_status = get_elem_by_name(elems, "Sync Status");
 
-  if (!sync_status)
-    return;
+  if (!sync_status) {
+    sync_status = get_elem_by_name(elems, "Sample Clock Sync Status");
+    if (!sync_status)
+      return;
+  }
 
   GtkWidget *b = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
   if (get_elem_by_prefix(elems, "Clock Source")) {
@@ -114,6 +122,30 @@ static void add_power_status_control(
   GtkWidget *w = make_drop_down_alsa_elem(power_status, NULL);
   gtk_widget_add_css_class(w, "power-status");
   gtk_widget_add_css_class(w, "fixed");
+  gtk_box_append(GTK_BOX(b), w);
+}
+
+static void add_sample_rate_control(
+  struct alsa_card *card,
+  GtkWidget        *global_controls
+) {
+  GtkWidget *b = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+  gtk_widget_set_tooltip_text(
+    b,
+    "The Sample Rate cannot be changed here because it is set by the "
+    "application which is using the interface, usually a sound "
+    "server like PulseAudio, JACK, or PipeWire. If this shows N/A, "
+    "no application is currently using the interface.\n\n"
+    "Note that not all features are available on all interfaces at "
+    "sample rates above 48kHz. Please refer to the user guide for "
+    "your interface for more information."
+  );
+  gtk_box_append(GTK_BOX(global_controls), b);
+
+  GtkWidget *l = gtk_label_new("Sample Rate");
+  gtk_box_append(GTK_BOX(b), l);
+  GtkWidget *w = make_sample_rate_widget(card);
+  gtk_widget_add_css_class(w, "sample-rate");
   gtk_box_append(GTK_BOX(b), w);
 }
 
@@ -338,6 +370,48 @@ static void create_input_air_enum_control(
   gtk_grid_attach(GTK_GRID(grid), w, column_num, current_row, 1, 1);
 }
 
+static void create_input_dsp_switch_control(
+  struct alsa_elem *elem,
+  GtkWidget        *grid,
+  int               current_row,
+  int               column_num
+) {
+  GtkWidget *w = make_boolean_alsa_elem(elem, "Enhance", NULL);
+  gtk_widget_add_css_class(w, "dsp");
+  gtk_widget_set_hexpand(w, TRUE);
+//  gtk_widget_set_tooltip_text(w, dsp_descr);
+
+  gtk_grid_attach(GTK_GRID(grid), w, column_num, current_row, 1, 1);
+}
+
+static void create_input_dsp_preset_control(
+  struct alsa_elem *elem,
+  GtkWidget        *grid,
+  int               current_row,
+  int               column_num
+) {
+  GtkWidget *w = make_drop_down_alsa_elem(elem, NULL);
+  gtk_widget_add_css_class(w, "dsp-preset");
+  gtk_widget_set_hexpand(w, TRUE);
+//  gtk_widget_set_tooltip_text(w, dsp_descr);
+
+  gtk_grid_attach(GTK_GRID(grid), w, column_num, current_row, 1, 1);
+}
+
+static void create_input_mute_switch_control(
+  struct alsa_elem *elem,
+  GtkWidget        *grid,
+  int               current_row,
+  int               column_num
+) {
+  GtkWidget *w = make_boolean_alsa_elem(elem, "Mute", NULL);
+  gtk_widget_add_css_class(w, "input-mute");
+  gtk_widget_set_hexpand(w, TRUE);
+//  gtk_widget_set_tooltip_text(w, dsp_descr);
+
+  gtk_grid_attach(GTK_GRID(grid), w, column_num, current_row, 1, 1);
+}
+
 static void create_input_pad_control(
   struct alsa_elem *elem,
   GtkWidget        *grid,
@@ -354,6 +428,25 @@ static void create_input_pad_control(
   );
 
   gtk_grid_attach(GTK_GRID(grid), w, column_num, current_row, 1, 1);
+}
+
+static void create_input_gain_switch_control(
+  struct alsa_elem *elem,
+  GtkWidget        *grid,
+  int               current_row,
+  int               column_num
+) {
+  GtkWidget *w = make_boolean_alsa_elem(elem, "Gain", NULL);
+  gtk_widget_add_css_class(w, "gain-switch");
+  gtk_widget_set_hexpand(w, TRUE);
+  gtk_widget_set_tooltip_text(
+    w,
+    "Enabling Gain switches from Low gain input (0dBFS = +16dBu)\n"
+    "to High gain input (0dBFS = −10dBV, approx −6dBu)."
+  );
+
+  // ignore current_row, always put it in the first row
+  gtk_grid_attach(GTK_GRID(grid), w, column_num, 1, 1, 1);
 }
 
 static void create_input_phantom_control(
@@ -412,12 +505,10 @@ static void create_input_controls_by_type(
 static void create_input_controls(
   struct alsa_card *card,
   GtkWidget        *top,
-  int              *x
+  int              *x,
+  int              input_count
 ) {
   GArray *elems = card->elems;
-
-  // find how many inputs have switches
-  int input_count = get_max_elem_by_name(elems, "Line", "Capture Switch");
 
   // Only the 18i20 Gen 2 has no input controls
   if (!input_count)
@@ -458,6 +549,25 @@ static void create_input_controls(
 
   int current_row = 1;
 
+  // 4th Gen Solo, put the Phantom Power control above the Air control
+  if (get_elem_by_name(elems, "Direct Monitor Playback Switch")) {
+    create_input_controls_by_type(
+      elems, input_grid, &current_row,
+      "Level Capture Enum", create_input_level_control
+    );
+    create_input_controls_by_type(
+      elems, input_grid, &current_row,
+      "Phantom Power Capture Switch", create_input_phantom_control
+    );
+    create_input_controls_by_type(
+      elems, input_grid, &current_row,
+      "Air Capture Enum", create_input_air_enum_control
+    );
+
+    (*x)++;
+    return;
+  }
+
   create_input_select_control(elems, input_grid, &current_row);
 
   create_input_controls_by_type(
@@ -486,6 +596,10 @@ static void create_input_controls(
   );
   create_input_controls_by_type(
     elems, input_grid, &current_row,
+    "Impedance Switch", create_input_level_control
+  );
+  create_input_controls_by_type(
+    elems, input_grid, &current_row,
     "Air Capture Switch", create_input_air_switch_control
   );
   create_input_controls_by_type(
@@ -494,7 +608,27 @@ static void create_input_controls(
   );
   create_input_controls_by_type(
     elems, input_grid, &current_row,
+    "DSP Capture Switch", create_input_dsp_switch_control
+  );
+  create_input_controls_by_type(
+    elems, input_grid, &current_row,
+    "DSP Preset Capture Enum", create_input_dsp_preset_control
+  );
+  create_input_controls_by_type(
+    elems, input_grid, &current_row,
+    "Mute Capture Switch", create_input_mute_switch_control
+  );
+  create_input_controls_by_type(
+    elems, input_grid, &current_row,
     "Pad Capture Switch", create_input_pad_control
+  );
+  create_input_controls_by_type(
+    elems, input_grid, &current_row,
+    "Pad Switch", create_input_pad_control
+  );
+  create_input_controls_by_type(
+    elems, input_grid, &current_row,
+    "Gain Switch", create_input_gain_switch_control
   );
   create_input_controls_by_type(
     elems, input_grid, &current_row,
@@ -509,7 +643,8 @@ static void create_output_controls(
   GtkWidget        *top,
   int              *x,
   int              y,
-  int              x_span
+  int              x_span,
+  int              output_count
 ) {
   GArray *elems = card->elems;
 
@@ -528,8 +663,6 @@ static void create_output_controls(
   gtk_box_append(GTK_BOX(box), output_grid);
 
   gtk_grid_attach(GTK_GRID(top), box, *x, y, x_span, 1);
-
-  int output_count = get_max_elem_by_name(elems, "Line", "Playback Volume");
 
   /* 4th Gen Solo/2i2 */
   if (get_elem_by_prefix(elems, "Direct Monitor Playback")) {
@@ -575,7 +708,8 @@ static void create_output_controls(
     return;
   }
 
-  int has_hw_vol = !!get_elem_by_name(elems, "Master HW Playback Volume");
+  int has_hw_vol = !!get_elem_by_name(elems, "Master HW Playback Volume") ||
+                   !!get_elem_by_name(elems, "Master Playback Volume");
   int line_1_col = has_hw_vol;
 
   for (int i = 0; i < output_count; i++) {
@@ -593,16 +727,25 @@ static void create_output_controls(
     if (!elem->card)
       continue;
 
-    int line_num = get_num_from_string(elem->name);
-
     // output controls
-    if (strncmp(elem->name, "Line", 4) == 0) {
+
+    // Gen 1 master output control
+    if (strcmp(elem->name, "Master Playback Volume") == 0) {
+      GtkWidget *l = gtk_label_new("Master");
+      gtk_grid_attach(GTK_GRID(output_grid), l, 0, 0, 1, 1);
+      w = make_gain_alsa_elem(elem, 1, WIDGET_GAIN_TAPER_LOG, 0);
+      gtk_widget_set_tooltip_text(w, "Master Volume Control");
+      gtk_grid_attach(GTK_GRID(output_grid), w, 0, 1, 1, 1);
+
+    } else if (strncmp(elem->name, "Line", 4) == 0 ||
+               strncmp(elem->name, "Master", 4) == 0) {
+
       if (strstr(elem->name, "Playback Volume")) {
         w = make_gain_alsa_elem(elem, 1, WIDGET_GAIN_TAPER_LOG, 1);
         gtk_grid_attach(
-          GTK_GRID(output_grid), w, line_num - 1 + line_1_col, 1, 1, 1
+          GTK_GRID(output_grid), w, elem->lr_num - 1 + line_1_col, 1, 1, 1
         );
-      } else if (strstr(elem->name, "Mute Playback Switch")) {
+      } else if (strstr(elem->name, "Playback Switch")) {
         w = make_boolean_alsa_elem(
           elem, "*audio-volume-high", "*audio-volume-muted"
         );
@@ -616,7 +759,7 @@ static void create_output_controls(
           gtk_widget_set_tooltip_text(w, _("Mute"));
         }
         gtk_grid_attach(
-          GTK_GRID(output_grid), w, line_num - 1 + line_1_col, 2, 1, 1
+          GTK_GRID(output_grid), w, elem->lr_num - 1 + line_1_col, 2, 1, 1
         );
       } else if (strstr(elem->name, "Volume Control Playback Enum")) {
         w = make_boolean_alsa_elem(elem, _("SW"), _("HW"));
@@ -627,7 +770,7 @@ static void create_output_controls(
           "volume for this analogue output.")
         );
         gtk_grid_attach(
-          GTK_GRID(output_grid), w, line_num - 1 + line_1_col, 3, 1, 1
+          GTK_GRID(output_grid), w, elem->lr_num - 1 + line_1_col, 3, 1, 1
         );
       }
 
@@ -693,21 +836,24 @@ static void create_global_controls(
     ? GTK_ORIENTATION_HORIZONTAL
     : GTK_ORIENTATION_VERTICAL;
   GtkWidget *global_controls = create_global_box(top, x, orient);
-  GtkWidget *left = global_controls;
-  GtkWidget *right = global_controls;
+  GtkWidget *column[3];
+
+  for (int i = 0; i < 3; i++)
+    column[i] = global_controls;
 
   if (card->has_speaker_switching) {
-    left = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
-    right = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
-    gtk_box_append(GTK_BOX(global_controls), left);
-    gtk_box_append(GTK_BOX(global_controls), right);
+    for (int i = 0; i < 3; i++) {
+      column[i] = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+      gtk_box_append(GTK_BOX(global_controls), column[i]);
+    }
   }
 
-  add_clock_source_control(card, left);
-  add_sync_status_control(card, right);
-  add_power_status_control(card, right);
-  add_speaker_switching_controls(card, left);
-  add_talkback_controls(card, right);
+  add_clock_source_control(card, column[0]);
+  add_sync_status_control(card, column[1]);
+  add_power_status_control(card, column[1]);
+  add_sample_rate_control(card, column[2]);
+  add_speaker_switching_controls(card, column[0]);
+  add_talkback_controls(card, column[1]);
 }
 
 static GtkWidget *create_main_window_controls(struct alsa_card *card) {
@@ -724,6 +870,8 @@ static GtkWidget *create_main_window_controls(struct alsa_card *card) {
     gtk_widget_add_css_class(top, "scarlett");
   } else if (strstr(card->name, "Clarett")) {
     gtk_widget_add_css_class(top, "clarett");
+  } else if (strstr(card->name, "Vocaster")) {
+    gtk_widget_add_css_class(top, "vocaster");
   }
 
   gtk_grid_set_spacing(GTK_GRID(top), 15);
@@ -731,18 +879,25 @@ static GtkWidget *create_main_window_controls(struct alsa_card *card) {
   int input_count = get_max_elem_by_name(
     card->elems, "Line", "Capture Switch"
   );
+  if (!input_count)
+    input_count =
+      get_max_elem_by_name(card->elems, "Input", "Switch");
+
   int output_count = get_max_elem_by_name(
     card->elems, "Line", "Playback Volume"
   );
+  if (!output_count)
+    output_count =
+      get_max_elem_by_name(card->elems, "Master", "Playback Volume") * 2;
 
   create_global_controls(card, top, &x);
-  create_input_controls(card, top, &x);
+  create_input_controls(card, top, &x, input_count);
 
   if (input_count + output_count >= 12) {
     x = 0;
-    create_output_controls(card, top, &x, 1, 2);
+    create_output_controls(card, top, &x, 1, 2, output_count);
   } else {
-    create_output_controls(card, top, &x, 0, 1);
+    create_output_controls(card, top, &x, 0, 1, output_count);
   }
 
   return top;

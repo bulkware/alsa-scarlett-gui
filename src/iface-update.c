@@ -25,20 +25,17 @@ GtkWidget *create_iface_update_main(struct alsa_card *card) {
   gtk_widget_add_css_class(w, "window-title");
   gtk_box_append(GTK_BOX(content), w);
 
-  uint32_t best_firmware_version =
-    scarlett2_get_best_firmware_version(card->pid);
-
-  if (!best_firmware_version) {
-    char *msg = g_strdup_printf(
+  if (!card->best_firmware_version) {
+    w = gtk_label_new(NULL);
+    gtk_label_set_markup(
+      GTK_LABEL(w),
       "A firmware update is required for this device in order to\n"
       "access all of its features. Please obtain the firmware from\n"
-      "(TBA), place it in <span font_family='monospace'>%s</span>,\n"
-      "and restart the application.",
-      SCARLETT2_FIRMWARE_DIR
+      "<a class=\"linktext\" "
+      "href=\"https://github.com/geoffreybennett/scarlett2-firmware\">"
+      "https://github.com/geoffreybennett/scarlett2-firmware</a>,\n"
+      "and restart this application."
     );
-    w = gtk_label_new(NULL);
-    gtk_label_set_markup(GTK_LABEL(w), msg);
-    g_free(msg);
 
     gtk_box_append(GTK_BOX(content), w);
     return top;

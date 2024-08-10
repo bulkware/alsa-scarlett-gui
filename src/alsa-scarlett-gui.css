@@ -19,6 +19,11 @@
   font-size: large;
 }
 
+/* Links */
+.linktext {
+  color: #89CFF0;
+}
+
 /* Label above controls-content */
 .controls-label {
   font-size: smaller;
@@ -78,7 +83,7 @@ label.gain {
 }
 
 .window-frame button:focus:focus-visible {
-  outline-color: #801010;
+  outline: 2px solid #801010;
 }
 
 /* padding doesn't work when selected with .window-frame, so use
@@ -113,6 +118,11 @@ button.toggle {
   filter: none;
 }
 
+.window-frame button.fixed label {
+  color: #ffffff;
+  filter: none;
+}
+
 /* Combobox controls that are always disabled because they indicate status */
 .window-frame combobox.fixed > box > button {
   color: #ffffff;
@@ -139,6 +149,11 @@ button.toggle {
 
 .window-frame button.autogain:checked {
   text-shadow: 0 0 5px #0000ff, 0 0 15px #0000ff;
+}
+
+/* orange */
+.window-frame .vocaster button.autogain:checked {
+  text-shadow: 0 0 5px #ffc000, 0 0 15px #ffc000;
 }
 
 .window-frame button.safe:checked {
@@ -195,6 +210,10 @@ button.toggle {
   text-shadow: 0 0 5px #00c000, 0 0 15px #00c000;
 }
 
+.window-frame button.gain-switch:checked {
+  text-shadow: 0 0 5px #00c000, 0 0 15px #00c000;
+}
+
 .window-frame button.phantom:checked {
   text-shadow: 0 0 5px #ff0000, 0 0 15px #c00000;
 }
@@ -205,6 +224,14 @@ button.toggle {
 
 .window-frame .gen4 button.phantom:checked:disabled {
   text-shadow: 0 0 5px #005000, 0 0 15px #005000;
+}
+
+.window-frame button.input-mute:checked {
+  text-shadow: 0 0 5px #ff0000, 0 0 15px #c00000;
+}
+
+.window-frame button.dsp:checked {
+  text-shadow: 0 0 5px #00c000, 0 0 15px #00c000;
 }
 
 /* Direct Monitor Checked (Solo) */
@@ -221,6 +248,31 @@ button.toggle {
 .window-frame button.direct-monitor.selected-stereo > label {
   color: #ffffff;
   text-shadow: 0 0 5px #00c000, 0 0 15px #00c000;
+}
+
+/* Sample Rates */
+.window-frame button.sample-rate.sample-rate-44100 {
+  text-shadow: 0 0 5px #00c000, 0 0 15px #00c000;
+}
+
+.window-frame button.sample-rate.sample-rate-48000 {
+  text-shadow: 0 0 5px #00c000, 0 0 15px #00c000;
+}
+
+.window-frame button.sample-rate.sample-rate-88200 {
+  text-shadow: 0 0 5px #ff8000, 0 0 15px #ff8000;
+}
+
+.window-frame button.sample-rate.sample-rate-96000 {
+  text-shadow: 0 0 5px #ff8000, 0 0 15px #ff8000;
+}
+
+.window-frame button.sample-rate.sample-rate-176400 {
+  text-shadow: 0 0 5px #ff0000, 0 0 15px #c00000;
+}
+
+.window-frame button.sample-rate.sample-rate-192000 {
+  text-shadow: 0 0 5px #ff0000, 0 0 15px #c00000;
 }
 
 /* Button controls where checked is dimmer */

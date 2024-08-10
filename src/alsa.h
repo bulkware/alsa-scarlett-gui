@@ -22,24 +22,27 @@ typedef void (AlsaElemCallback)(struct alsa_elem *, void *);
 // port categories for routing_src and routing_snk entries
 // must match the level meter ordering from the driver
 enum {
-  // Hardware inputs/outputs
-  PC_HW    = 0,
-
-  // Mixer inputs/outputs
-  PC_MIX   = 1,
-
-  // DSP inputs/outputs
-  PC_DSP   = 2,
-
-  // PCM inputs/outputs
-  PC_PCM   = 3,
-
-  // number of port categories
-  PC_COUNT = 4
+  PC_OFF,  // Off (the source when a sink is not connected)
+  PC_HW,   // Hardware inputs/outputs
+  PC_MIX,  // Mixer inputs/outputs
+  PC_DSP,  // DSP inputs/outputs
+  PC_PCM,  // PCM inputs/outputs
+  PC_COUNT // number of port categories
 };
 
 // names for the port categories
 extern const char *port_category_names[PC_COUNT];
+
+// hardware types
+enum {
+  HW_TYPE_ANALOGUE,
+  HW_TYPE_SPDIF,
+  HW_TYPE_ADAT,
+  HW_TYPE_COUNT
+};
+
+// names for the hardware types
+extern const char *hw_type_names[HW_TYPE_COUNT];
 
 // is a drag active, and whether dragging from a routing source or a
 // routing sink
@@ -59,7 +62,7 @@ struct routing_src {
   // the enum id of the alsa item
   int id;
 
-  // PC_DSP, PC_MIX, PC_PCM, or PC_HW
+  // PC_NONE, PC_DSP, PC_MIX, PC_PCM, or PC_HW
   int port_category;
 
   // 0-based count within port_category
@@ -67,6 +70,9 @@ struct routing_src {
 
   // the alsa item name
   char *name;
+
+  // for PC_HW, the hardware type
+  int hw_type;
 
   // the number (or translated letter; A = 1) in the item name
   int lr_num;
@@ -98,11 +104,11 @@ struct routing_snk {
   // socket widget on the routing page
   GtkWidget *socket_widget;
 
-  // PC_DSP, PC_MIX, PC_PCM, or PC_HW
-  int port_category;
+//  // PC_DSP, PC_MIX, PC_PCM, or PC_HW
+//  int port_category;
 
-  // 0-based count within port_category
-  int port_num;
+//  // 0-based count within port_category
+//  int port_num;
 
   // the mixer label widgets for this sink
   GtkWidget *mixer_label_top;
@@ -126,6 +132,7 @@ struct alsa_elem {
   const char *name;
   int         type;
   int         count;
+  int         index;
 
   // for gain/volume elements, the dB range and step
   int min_val;
@@ -133,15 +140,19 @@ struct alsa_elem {
   int min_dB;
   int max_dB;
 
-  // for the number (or translated letter; A = 1) in the item name
-  // TODO: move this to struct routing_snk?
+  // for routing sinks
+  int is_routing_snk;
+  int port_category;
+  int port_num;
+  int hw_type;
   int lr_num;
 
   // the callback functions for this ALSA control element
   GList *callbacks;
 
   // for simulated elements, the current state
-  int  writable;
+  int  is_writable;
+  int  is_volatile;
   long value;
 
   // for simulated enumerated elements, the items
@@ -155,11 +166,11 @@ struct alsa_card {
   uint32_t            pid;
   char               *serial;
   char               *name;
+  int                 best_firmware_version;
   snd_ctl_t          *handle;
   struct pollfd       pfd;
   GArray             *elems;
   struct alsa_elem   *sample_capture_elem;
-  struct alsa_elem   *level_meter_elem;
   GArray             *routing_srcs;
   GArray             *routing_snks;
   GIOChannel         *io_channel;
@@ -181,8 +192,6 @@ struct alsa_card {
   GtkWidget          *routing_dsp_out_grid;
   GtkWidget          *routing_mixer_in_grid;
   GtkWidget          *routing_mixer_out_grid;
-  GtkWidget          *meters[MAX_METERS];
-  guint               meter_gsource_timer;
   int                 has_speaker_switching;
   int                 has_talkback;
   int                 routing_out_count[PC_COUNT];
@@ -199,10 +208,14 @@ struct alsa_card {
 void fatal_alsa_error(const char *msg, int err);
 
 // locate elements or get information about them
-struct alsa_elem *get_elem_by_name(GArray *elems, char *name);
-struct alsa_elem *get_elem_by_prefix(GArray *elems, char *prefix);
-int get_max_elem_by_name(GArray *elems, char *prefix, char *needle);
-int is_elem_routing_snk(struct alsa_elem *elem);
+struct alsa_elem *get_elem_by_name(GArray *elems, const char *name);
+struct alsa_elem *get_elem_by_prefix(GArray *elems, const char *prefix);
+struct alsa_elem *get_elem_by_substr(GArray *elems, const char *substr);
+int get_max_elem_by_name(
+  GArray *elems,
+  const char *prefix,
+  const char *needle
+);
 
 // add callback to alsa_elem callback list
 void alsa_elem_add_callback(
@@ -218,12 +231,17 @@ long alsa_get_elem_value(struct alsa_elem *elem);
 int *alsa_get_elem_int_values(struct alsa_elem *elem);
 void alsa_set_elem_value(struct alsa_elem *elem, long value);
 int alsa_get_elem_writable(struct alsa_elem *elem);
+int alsa_get_elem_volatile(struct alsa_elem *elem);
 int alsa_get_elem_count(struct alsa_elem *elem);
 int alsa_get_item_count(struct alsa_elem *elem);
 char *alsa_get_item_name(struct alsa_elem *elem, int i);
 
 // add to alsa_cards array
 struct alsa_card *card_create(int card_num);
+
+// parse elements (used by alsa-sim.c)
+void alsa_set_lr_nums(struct alsa_card *card);
+void alsa_get_routing_controls(struct alsa_card *card);
 
 // init
 void alsa_init(void);

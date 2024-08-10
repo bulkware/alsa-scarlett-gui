@@ -5,14 +5,13 @@
 #include "device-update-firmware.h"
 #include "gtkhelper.h"
 #include "scarlett2.h"
-#include "scarlett2-firmware.h"
 #include "scarlett2-ioctls.h"
 #include "widget-boolean.h"
+#include "widget-drop-down.h"
 #include "window-startup.h"
 #include <libintl.h>
 
 #define REQUIRED_HWDEP_VERSION_MAJOR 1
-#define _(String) gettext (String)
 
 static GtkWidget *small_label(const char *text) {
   GtkWidget *w = gtk_label_new(NULL);
@@ -183,6 +182,203 @@ static void add_reset_action(
   gtk_grid_attach(GTK_GRID(grid), w, 1, *grid_y, 1, 2);
 
   *grid_y += 2;
+
+  return 1;
+}
+
+static int add_spdif_mode_control(
+  GArray    *elems,
+  GtkWidget *grid,
+  int       *grid_y
+) {
+  const char * const mode_names[] = {
+    "S/PDIF Mode",
+    "Digital I/O Mode",
+    NULL
+  };
+
+  struct alsa_elem *spdif = NULL;
+  int i = 0;
+
+  while (mode_names[i]) {
+    if ((spdif = get_elem_by_prefix(elems, mode_names[i])))
+      break;
+
+    i++;
+  }
+
+  if (!spdif)
+    return 0;
+
+  add_sep(grid, grid_y);
+
+  GtkWidget *w;
+
+  w = small_label(mode_names[i]);
+  gtk_grid_attach(GTK_GRID(grid), w, 0, *grid_y, 1, 1);
+
+  w = make_drop_down_alsa_elem(spdif, NULL);
+  gtk_widget_set_valign(w, GTK_ALIGN_START);
+  gtk_grid_attach(GTK_GRID(grid), w, 0, *grid_y + 1, 1, 1);
+
+  w = big_label(
+    i == 0 ? (
+      "The S/PDIF Mode selects whether the interface can receive "
+      "S/PDIF input from the coaxial (RCA) input or the optical "
+      "(TOSLINK) input. This requires a reboot to take effect."
+    ) : (
+      "The Digital I/O Mode selects whether the interface can "
+      "receive S/PDIF input from the coaxial (RCA) input, the "
+      "optical (TOSLINK) input, or whether dual-ADAT mode is "
+      "enabled. This requires a reboot to take effect."
+    )
+  );
+  gtk_grid_attach(GTK_GRID(grid), w, 1, *grid_y, 1, 2);
+
+  *grid_y += 2;
+
+  return 1;
+}
+
+static void add_reset_action(
+  struct alsa_card *card,
+  GtkWidget        *grid,
+  int              *grid_y,
+  const char       *label,
+  const char       *button_label,
+  const char       *description,
+  GCallback        callback
+) {
+  add_sep(grid, grid_y);
+
+  GtkWidget *w;
+
+  w = small_label(label);
+  gtk_grid_attach(GTK_GRID(grid), w, 0, *grid_y, 1, 1);
+
+  w = gtk_button_new_with_label(button_label);
+  gtk_grid_attach(GTK_GRID(grid), w, 0, *grid_y + 1, 1, 1);
+  g_signal_connect(w, "clicked", callback, card);
+
+  w = big_label(description);
+  gtk_grid_attach(GTK_GRID(grid), w, 1, *grid_y, 1, 2);
+
+  *grid_y += 2;
+}
+
+static void reboot_device(GtkWidget *button, struct alsa_card *card) {
+  snd_hwdep_t *hwdep;
+
+  int err = scarlett2_open_card(card->device, &hwdep);
+  if (err < 0) {
+    fprintf(stderr, "unable to open hwdep interface: %s\n", snd_strerror(err));
+    return;
+  }
+
+  err = scarlett2_reboot(hwdep);
+  if (err < 0) {
+    fprintf(stderr, "unable to reboot device: %s\n", snd_strerror(err));
+    return;
+  }
+
+  scarlett2_close(hwdep);
+}
+
+static void add_reset_actions(
+  struct alsa_card *card,
+  GtkWidget        *grid,
+  int              *grid_y,
+  int               show_reboot_option
+) {
+  // simulated cards don't support hwdep
+  if (!card->device)
+    return;
+
+  snd_hwdep_t *hwdep;
+
+  int err = scarlett2_open_card(card->device, &hwdep);
+  if (err < 0) {
+    fprintf(stderr, "unable to open hwdep interface: %s\n", snd_strerror(err));
+    return;
+  }
+
+  int ver = scarlett2_get_protocol_version(hwdep);
+  if (ver < 0) {
+    fprintf(stderr, "unable to get protocol version: %s\n", snd_strerror(ver));
+    return;
+  }
+
+  if (SCARLETT2_HWDEP_VERSION_MAJOR(ver) != REQUIRED_HWDEP_VERSION_MAJOR) {
+    fprintf(
+      stderr,
+      "Unsupported hwdep protocol version %d.%d.%d on card %s\n",
+      SCARLETT2_HWDEP_VERSION_MAJOR(ver),
+      SCARLETT2_HWDEP_VERSION_MINOR(ver),
+      SCARLETT2_HWDEP_VERSION_SUBMINOR(ver),
+      card->device
+    );
+    return;
+  }
+
+  scarlett2_close(hwdep);
+
+  // Add reboot action if there is a control that requires a reboot
+  // to take effect
+  if (show_reboot_option) {
+    add_reset_action(
+      card,
+      grid,
+      grid_y,
+      "Reboot Device",
+      "Reboot",
+      "Rebooting the interface will apply changes made to the "
+      "startup configuration. This will take a few seconds.",
+      G_CALLBACK(reboot_device)
+    );
+  }
+
+  // Reset Configuration
+  add_reset_action(
+    card,
+    grid,
+    grid_y,
+    "Reset Configuration",
+    "Reset",
+    "Resetting the configuration will reset the interface to its "
+    "factory default settings. The firmware will be left unchanged.",
+    G_CALLBACK(create_reset_config_window)
+  );
+
+  // Update Firmware
+  struct alsa_elem *firmware_elem =
+    get_elem_by_name(card->elems, "Firmware Version");
+
+  if (!firmware_elem)
+    return;
+
+  int firmware_version = alsa_get_elem_value(firmware_elem);
+
+  if (firmware_version >= card->best_firmware_version)
+    return;
+
+  char *s = g_strdup_printf(
+    "Updating the firmware will reset the interface to its "
+    "factory default settings and update the firmware from version "
+    "%d to %d.",
+    firmware_version,
+    card->best_firmware_version
+  );
+  add_reset_action(
+    card,
+    grid,
+    grid_y,
+    "Update Firmware",
+    "Update",
+    s,
+    G_CALLBACK(create_update_firmware_window)
+  );
+
+  g_free(s);
 }
 
 static void reboot_device(GtkWidget *button, struct alsa_card *card) {
@@ -328,7 +524,9 @@ GtkWidget *create_startup_controls(struct alsa_card *card) {
   add_standalone_control(elems, grid, &grid_y);
   add_phantom_persistence_control(elems, grid, &grid_y);
   int has_msd = add_msd_control(elems, grid, &grid_y);
-  add_reset_actions(card, grid, &grid_y, has_msd);
+  int has_spdif_mode = add_spdif_mode_control(elems, grid, &grid_y);
+  int show_reboot_option = has_msd || has_spdif_mode;
+  add_reset_actions(card, grid, &grid_y, show_reboot_option);
 
   if (!grid_y)
     add_no_startup_controls_msg(grid);

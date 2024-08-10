@@ -13,9 +13,9 @@ GtkWidget *create_window_iface_none(GtkApplication *app) {
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 50);
   gtk_widget_set_margin(box, 50);
   GtkWidget *picture = gtk_picture_new_for_resource(
-    "/vu/b4/alsa-scarlett-gui/icons/alsa-scarlett-gui-logo.png"
+    "/vu/b4/alsa-scarlett-gui/icons/vu.b4.alsa-scarlett-gui.png"
   );
-  GtkWidget *label = gtk_label_new(_("No Scarlett/Clarett interface found."));
+  GtkWidget *label = gtk_label_new("No Scarlett/Clarett/Vocaster interface found.");
 
   gtk_box_append(GTK_BOX(box), picture);
   gtk_box_append(GTK_BOX(box), label);

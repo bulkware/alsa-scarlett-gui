@@ -3,8 +3,7 @@
 
 #include "about.h"
 
-#include <libintl.h>
-#define _(String) gettext (String)
+static GdkTexture *logo = NULL;
 
 void activate_about(
   GSimpleAction *action,
@@ -14,20 +13,27 @@ void activate_about(
   GtkWindow *w = GTK_WINDOW(data);
 
   const char *authors[] = {
-    _("Geoffrey D. Bennett"),
+    "Geoffrey D. Bennett <g@b4.vu>",
     NULL
   };
+
+  if (!logo)
+    logo = gdk_texture_new_from_resource(
+      "/vu/b4/alsa-scarlett-gui/icons/vu.b4.alsa-scarlett-gui.png"
+    );
 
   gtk_show_about_dialog(
     w,
     "program-name", _("ALSA Scarlett2 Control Panel"),
     "version", "Version " VERSION,
-    "comments", _("GTK4 interface to the ALSA Scarlett and Clarett Mixer controls"),
+    "comments",
+      "Gtk4 GUI for the ALSA controls presented by the\n"
+      "Linux kernel Focusrite Scarlett2 Mixer Driver",
     "website", "https://github.com/geoffreybennett/alsa-scarlett-gui",
     "copyright", _("Copyright 2022-2024 Geoffrey D. Bennett"),
     "license-type", GTK_LICENSE_GPL_3_0,
-    "logo-icon-name", "alsa-scarlett-gui-logo",
-    "title", _("About ALSA Scarlett2 Mixer Interface"),
+    "logo", logo,
+    "title", "About ALSA Scarlett2 Mixer Interface",
     "authors", authors,
     NULL
   );
